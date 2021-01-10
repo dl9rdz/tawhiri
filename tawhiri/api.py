@@ -26,7 +26,7 @@ import strict_rfc3339
 
 from tawhiri import solver, models
 from tawhiri.dataset import Dataset as WindDataset
-from tawhiri.warnings import WarningCounts
+from tawhiri.twarnings import WarningCounts
 from ruaumoko import Dataset as ElevationDataset
 
 app = Flask(__name__)

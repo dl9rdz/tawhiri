@@ -37,6 +37,7 @@ import signal
 import operator
 from datetime import datetime
 import logging
+import datasetconfig
 
 logger = logging.getLogger("tawhiri.dataset")
 
@@ -57,11 +58,16 @@ class Dataset(object):
         The forecast time of this dataset (:class:`datetime.datetime`).
 
     """
+    global dsconfig
+    dsconfig = datasetconfig.config
+    print(dsconfig)
 
     #: The dimensions of the dataset
     #:
     #: Note ``len(axes[i]) == shape[i]``.
-    shape = (65, 47, 3, 361, 720)
+    ##-> now defined in datasetconfig!
+    shape = datasetconfig.shape
+    ##shape = (65, 47, 3, 361, 720)
 
     # TODO: use the other levels too?
     # {10, 80, 100}m heightAboveGround (u, v)
@@ -87,15 +93,18 @@ class Dataset(object):
     #: For example, ``axes.pressure[4]`` is ``900`` - points in
     #: cells ``dataset.array[a][4][b][c][d]`` correspond to data at 900mb.
     axes = _axes_type(
-        range(0, 192 + 3, 3),
-        sorted(pressures_pgrb2f + pressures_pgrb2bf, reverse=True),
-        ["height", "wind_u", "wind_v"],
-        [x/2.0 for x in range(-180, 180 + 1)],
-        [x/2.0 for x in range(0, 720)]
+        range(dsconfig[0][1], dsconfig[0][1]+dsconfig[0][0]*dsconfig[0][2], dsconfig[0][2]),  # was: 0, 192 + 3, 3),
+        sorted(pressures_pgrb2f + pressures_pgrb2bf, reverse=True),                           # ok. dsconfig[1] must match! (47,0,1)
+        ["height", "wind_u", "wind_v"],                                                       # ok. dsconfig[2] must match! (3,*,*)
+        [x*dsconfig[3][2] for x in range(dsconfig[3][1], dsconfig[3][1] + dsconfig[3][0]) ],  # was: [x/2.0 for x in range(-180, 180 + 1)],
+        [x*dsconfig[4][2] for x in range(dsconfig[4][1], dsconfig[4][1] + dsconfig[4][0]) ],  # was: [x/2.0 for x in range(0, 720)]
     )
 
     _listdir_type = namedtuple("dataset_in_row",
                 ("ds_time", "suffix", "filename", "path"))
+
+    print("shape: ",shape)
+    print("axes: ",tuple(len(x) for x in axes))
 
     assert shape == tuple(len(x) for x in axes)
 

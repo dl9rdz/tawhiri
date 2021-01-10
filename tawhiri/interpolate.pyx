@@ -37,8 +37,8 @@ memory access.
 
 
 from magicmemoryview import MagicMemoryView
-from .warnings cimport WarningCounts
-
+from .twarnings cimport WarningCounts
+import datasetconfig
 
 # These need to match Dataset.axes.variable
 DEF VAR_A = 0
@@ -64,8 +64,15 @@ class RangeError(ValueError):
         s = "{0}={1}".format(variable, value)
         super(RangeError, self).__init__(s)
 
+cdef struct Dcfg:
+    int t0, lat0, lng0;
+    int tmax, latmax, lngmax;
+    int ts;
+    double lats, lngs;
 
-def make_interpolator(dataset, WarningCounts warnings):
+cdef Dcfg dcfg;
+
+def make_interpolator(dataset, WarningCounts warnings, config):
     """
     Produce a function that can get wind data from `dataset`
 
@@ -74,12 +81,23 @@ def make_interpolator(dataset, WarningCounts warnings):
     wind velocities.
     """
 
+    dcfg.t0 = config[0][1];
+    dcfg.tmax = config[0][0];
+    dcfg.ts = config[0][2];
+    dcfg.lat0 = int(round(config[3][1]*config[3][2]));
+    dcfg.latmax = config[3][0];
+    dcfg.lats = config[3][2];
+    dcfg.lng0 = int(round(config[4][1]*config[4][2]));
+    dcfg.lngmax = config[4][0];
+    dcfg.lngs = config[4][2];
+
     cdef float[:, :, :, :, :] data
 
     if warnings is None:
         raise TypeError("Warnings must not be None")
 
-    data = MagicMemoryView(dataset.array, (65, 47, 3, 361, 720), b"f")
+    data = MagicMemoryView(dataset.array, datasetconfig.shape, b"f")
+    #data = MagicMemoryView(dataset.array, (65, 47, 3, 361, 720), b"f")
 
     def f(hour, lat, lng, alt):
         return get_wind(data, warnings, hour, lat, lng, alt)
@@ -149,9 +167,12 @@ cdef long pick3(double hour, double lat, double lng, Lerp3[8] out) except -1:
     # However, the longitude does wrap around, so we tell `pick` that the
     # longitude axis is one larger than it is (so that it can "choose" the
     # 721st point/the 360 degrees point), then wrap it afterwards.
-    pick(0, 3, 65, hour, "hour", lhour)
-    pick(-90, 0.5, 361, lat, "lat", llat)
-    pick(0, 0.5, 720 + 1, lng, "lng", llng)
+    ##pick(0, 3, 65, hour, "hour", lhour)
+    ##pick(-90, 0.5, 361, lat, "lat", llat)
+    ##pick(0, 0.5, 720 + 1, lng, "lng", llng)
+    pick(dcfg.t0, dcfg.ts, dcfg.tmax, hour, "hour", lhour)
+    pick(dcfg.lat0, dcfg.lats, dcfg.latmax, lat, "lat", llat)
+    pick(dcfg.lng0, dcfg.lngs, dcfg.lngmax, lng, "lng", llng)
     if llng[1].index == 720:
         llng[1].index = 0
 
