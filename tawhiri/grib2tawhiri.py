@@ -4,7 +4,7 @@ import argparse
 import pygrib
 import numpy as np
 from dataset import Dataset
-from datetime import datetime
+from datetime import datetime,timezone
 import datasetconfig
 
 _grib_name_to_variable = {"Geopotential Height": "height",
@@ -116,7 +116,6 @@ def _check_axes(record):
 ### main part...
 def main():
 #d = Dataset({'ds_time': datetime.now()});
-    d = Dataset(datetime.now(), new=True);
     global logger
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
@@ -126,9 +125,12 @@ def main():
 
     parent = argparse.ArgumentParser()
     parent.add_argument("infile")
+    parent.add_argument("predtime")
     args = parent.parse_args()
 
-    unpack_grib(args.infile, datetime.now(), d);
+    predtime = datetime.strptime(args.predtime,"%Y%m%d%H").replace(tzinfo=timezone.utc)
+    d = Dataset(predtime, new=True);
+    unpack_grib(args.infile, predtime, d);
 
 
 if __name__ == "__main__":

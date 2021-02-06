@@ -38,7 +38,7 @@ memory access.
 
 from magicmemoryview import MagicMemoryView
 from .twarnings cimport WarningCounts
-import datasetconfig
+from tawhiri import datasetconfig
 
 # These need to match Dataset.axes.variable
 DEF VAR_A = 0
@@ -72,7 +72,7 @@ cdef struct Dcfg:
 
 cdef Dcfg dcfg;
 
-def make_interpolator(dataset, WarningCounts warnings, config):
+def make_interpolator(dataset, WarningCounts warnings):
     """
     Produce a function that can get wind data from `dataset`
 
@@ -80,7 +80,7 @@ def make_interpolator(dataset, WarningCounts warnings, config):
     to us, and then returns a closure that can be used to retrieve
     wind velocities.
     """
-
+    config = datasetconfig.config;
     dcfg.t0 = config[0][1];
     dcfg.tmax = config[0][0];
     dcfg.ts = config[0][2];

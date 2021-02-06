@@ -37,7 +37,7 @@ import signal
 import operator
 from datetime import datetime
 import logging
-import datasetconfig
+from tawhiri import datasetconfig
 
 logger = logging.getLogger("tawhiri.dataset")
 
@@ -126,7 +126,7 @@ class Dataset(object):
     DEFAULT_DIRECTORY = '/srv/tawhiri-datasets'
 
     @classmethod
-    def filename(cls, ds_time, directory=DEFAULT_DIRECTORY, suffix=''):
+    def filename(cls, ds_time, directory=DEFAULT_DIRECTORY, suffix=SUFFIX_GRIBMIRROR):
         """
         Returns the filename under which we expect to find a dataset
 
@@ -246,9 +246,14 @@ class Dataset(object):
         flags = mmap.MAP_SHARED
 
         if new:
-            mode = "w+b"
+            # mode = "w+b"
+            if not os.path.isfile(self.fn):
+                mode = "w+b"
+                msg = "create and write"
+            else:
+                mode = "r+b"
+                msg = "open and write"
             prot |= mmap.PROT_WRITE
-            msg = "truncate and write"
         else:
             mode = "rb"
             msg = "read"
